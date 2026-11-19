@@ -1,6 +1,14 @@
 <!doctype html>
 <html lang="th"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#101719">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Commercial Team">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Commercial Team 2026-2027</title>
 <script src="storage-local.js"></script>
 <script src="sheets-config.js"></script>
@@ -1270,7 +1278,5 @@ document.fonts&&document.fonts.ready.then(()=>render());
  }catch(e){status='โหมดทดลอง (ข้อมูลไม่ถูกบันทึก)'}
  render();
 })();
-</script></body></html>
-
-
-</body></html>
+</script>
+<script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></body></html>
