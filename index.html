@@ -345,7 +345,7 @@ let prefsReady=false,lastPrefs='';
 function savePrefs(){if(!prefsReady)return;try{const v=JSON.stringify({view,mode,theme,pf,mt,tf:[...tf],sf:[...sf],col:[...col],showH,calSel:[...calSel],calLong});if(v!==lastPrefs){lastPrefs=v;localStorage.setItem(PK,v)}}catch(e){}}
 // ---- recurring occurrences ----
 const RI=t=>t&&t.repeat=='weekly'?'🔁':'📅';
-const ownOf=(x,t)=>(x&&x.owners)||[];
+const ownOf=(x,t)=>(x&&x.owners)||[]; const eoF=(t,s)=>(s&&s.owners&&s.owners.length)?s.owners:((t&&t.owners)||[]);
 const subRange=t=>{const ds=(t.subs||[]).filter(y=>y.start);if(!ds.length)return'';let mn=ds[0].start,mx=ds[0].end;ds.forEach(y=>{if(y.start<mn)mn=y.start;if(y.end>mx)mx=y.end});return fr(mn,mx)};
 function isRep(t){return!!(t&&t.repeat&&t.repeat!='none'&&t.start&&t.end&&!(t.subs&&t.subs.length))}
 function addMonthsD(day,k){const dt=new Date(day*D),nd=new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth()+k,1)),last=new Date(Date.UTC(nd.getUTCFullYear(),nd.getUTCMonth()+1,0)).getUTCDate();nd.setUTCDate(Math.min(dt.getUTCDate(),last));return Math.floor(nd.getTime()/D)}
@@ -457,7 +457,7 @@ const lc=(t,x,i,grp,h)=>{const bkey=i!=null?t.id+'::'+i:t.id;return`<div class="
   const it=[];
   sortT().forEach(t=>{
    if(t.hidden&&!showH)return;const S=t.subs||[],own=(t.owners||[]).includes(name);
-   if(S.length){const V=S.map((s,i)=>[s,i]).filter(([s])=>(s.owners||[]).includes(name)&&(showH||!s.hidden)&&tagOk(t.tags,s.tags)&&(qOk(t.title)||qOk(s.title))&&statusOk(s));if(V.length)it.push([t,V])}
+   if(S.length){const V=S.map((s,i)=>[s,i]).filter(([s])=>eoF(t,s).includes(name)&&(showH||!s.hidden)&&tagOk(t.tags,s.tags)&&(qOk(t.title)||qOk(s.title))&&statusOk(s));if(V.length)it.push([t,V])}
    else if(own&&tagOk(t.tags)&&qOk(t.title)&&statusOk(t))it.push([t,null])});
   if(!it.length)return;
   const pc=PCOLORS[name],ptx=pc?textForHex(pc):null;
@@ -468,7 +468,7 @@ const lc=(t,x,i,grp,h)=>{const bkey=i!=null?t.id+'::'+i:t.id;return`<div class="
   if(mt&&t.id!=mt)return;
   const h=colorOf(t),S=t.subs||[];
   if(t.hidden&&!showH)return;const hc=t.hidden?' hid':'';
-  if(S.length){const V=S.map((s,i)=>[s,i]).filter(([s])=>mine(s.owners)&&(showH||!s.hidden)&&tagOk(t.tags,s.tags)&&(qOk(t.title)||qOk(s.title))&&statusOk(s));if(!V.length)return;VIS.push(t.id);
+  if(S.length){const V=S.map((s,i)=>[s,i]).filter(([s])=>mine(eoF(t,s))&&(showH||!s.hidden)&&tagOk(t.tags,s.tags)&&(qOk(t.title)||qOk(s.title))&&statusOk(s));if(!V.length)return;VIS.push(t.id);
    const cp=col.has(t.id),ln=cp?lanes(V):null;
    rows+=`<div class="row grp${hc}">${lc(t,t,null,1,h)}${tc(cp?ln.items.map(([s,i,k])=>bar(s,h,1,t.id,i,k)).join(''):'',cp?12+ln.n*28:0)}</div>`;
    if(!cp)fsOrder(V,S).forEach(([s,i])=>rows+=`<div class="row sub${hc||(s.hidden?' hid':'')}">${lc(t,s,i,undefined,h)}${tc(bar(s,h,1,t.id,i))}</div>`)}
@@ -476,7 +476,7 @@ const lc=(t,x,i,grp,h)=>{const bkey=i!=null?t.id+'::'+i:t.id;return`<div class="
  if(!rows)rows=`<div class="emp">${tasks.length?(pf?'ไม่มีงานของ '+esc(pf):'ไม่มีงานที่แสดง'):'ยังไม่มีงาน กด “+ เพิ่มงาน” เพื่อเริ่มต้น'}</div>`;
  const nx2=(nw-ws)*p,inRange=nw>=ws&&nw<we,line=inRange?`<div class="now${(jump&&(window.__pu=Date.now()+2500))||Date.now()<(window.__pu||0)?' pulse':''}" style="left:${lw+nx2}px"></div>`:'',pin=inRange&&view=='year'?`<div class="nowpin" style="left:${nx2}px">วันนี้</div>`:'';
  const leafAll=()=>{const out=[];sortT().forEach(t=>{if(mt&&t.id!=mt)return;if(t.hidden&&!showH)return;const h=colorOf(t),S=t.subs||[];
-  if(S.length)S.forEach((x,i)=>{if((x.hidden&&!showH)||!mine(x.owners)||!tagOk(t.tags,x.tags)||!(qOk(t.title)||qOk(x.title))||!statusOk(x))return;out.push({t,x,i,h})});
+  if(S.length)S.forEach((x,i)=>{if((x.hidden&&!showH)||!mine(eoF(t,x))||!tagOk(t.tags,x.tags)||!(qOk(t.title)||qOk(x.title))||!statusOk(x))return;out.push({t,x,i,h})});
   else if(mine(t.owners)&&tagOk(t.tags)&&qOk(t.title)&&statusOk(t))out.push({t,x:t,i:null,h})});return out};
  if(view=='cal'){
   const f0=per(0),wd0=new Date(f0*D).getUTCDay(),dim=per(1)-f0,gs=f0-wd0,nW=Math.ceil((wd0+dim)/7),ge=gs+nW*7,tdD=Math.floor(nw),it=[];
@@ -486,7 +486,7 @@ const lc=(t,x,i,grp,h)=>{const bkey=i!=null?t.id+'::'+i:t.id;return`<div class="
    else if(t.start&&mine(t.owners)&&tagOk(t.tags)&&qOk(t.title)&&statusOk(t)){const a=n(t.start),b=n(t.end);if(b<gs||a>=ge)return;it.push({t,x:t,i:null,h,a,b,lab:t.title})}});
   let it2=it,leg='';
   if(mode=='person'){const NA='ไม่ระบุ',cnt={};it2=[];
-   it.forEach(o=>{const ow=o.x.owners||[];const names=(ow.length?ow:[NA]).filter(nm=>!pf||nm==pf);if(!names.length)return;const inM=o.b>=f0&&o.a<f0+dim;names.forEach(nm=>{if(inM)cnt[nm]=(cnt[nm]||0)+1});if(calSel.size&&!names.some(nm=>calSel.has(nm)))return;it2.push({...o,persons:names,person:calSel.size||pf?(pf||[...calSel][0]):names[0]})});
+   it.forEach(o=>{const ow=(o.i!=null?eoF(o.t,o.x):(o.x.owners||[]));const names=(ow.length?ow:[NA]).filter(nm=>!pf||nm==pf);if(!names.length)return;const inM=o.b>=f0&&o.a<f0+dim;names.forEach(nm=>{if(inM)cnt[nm]=(cnt[nm]||0)+1});if(calSel.size&&!names.some(nm=>calSel.has(nm)))return;it2.push({...o,persons:names,person:calSel.size||pf?(pf||[...calSel][0]):names[0]})});
    const names=[...P.filter(x=>!pf||x==pf),...(cnt[NA]?[NA]:[])];
    leg=`<div class="cleg"><span class="mut">ปฏิทินของ:</span><button type="button" data-cp="" class="${calSel.size?'':'on'}">ทั้งหมด</button>${names.map(nm=>{const pc=PCOLORS[nm]||'#9aa5a8',on=calSel.has(nm);return`<button type="button" data-cp="${esc(nm)}" class="${on?'on':''}" style="--pc:${pc};--pt:${textForHex(pc)}"><i></i>${esc(nm)} <small>${cnt[nm]||0}</small></button>`}).join('')}<span class="mut" style="margin-left:auto">${calSel.size||pf?'กดชื่อเดิมอีกครั้งหรือ “ทั้งหมด” เพื่อดูทุกคน':'กดชื่อเพื่อดูปฏิทินของคนนั้นคนเดียว'} · ตัวเลข = จำนวนงานในเดือนนี้</span></div>`}
   calItems=it2;
@@ -562,7 +562,7 @@ function dashHTML(L){if(!L.length)return`<div class="emp">ไม่มีงา�
  const td=tdN(),C={};KBC.forEach(k=>C[k]=0);L.forEach(o=>C[st(o.x)]++);const tot=L.length,pc=Math.round(C.done/tot*100);
  const tile=(k,lab,v,sub)=>`<div class="dtile"${k?` style="--sc:var(--s-${k})"`:''}><small>${k?'<i></i>':''}${lab}</small><b>${v}</b>${sub||''}</div>`;
  const tiles=tile('','งานทั้งหมด',tot,`<span>เสร็จแล้ว ${pc}%</span><span class="pgb"><i style="width:${pc}%"></i></span>`)+['late','active','ok','none','done'].map(k=>tile(k,ST[k],C[k],`<span>${Math.round(C[k]/tot*100)}% ของทั้งหมด</span>`)).join('');
- const NA='ไม่ระบุ',PS={};L.forEach(o=>{const ow=(o.x.owners||[]).length?o.x.owners:[NA];ow.forEach(nm=>{(PS[nm]=PS[nm]||{n:0,c:{}}).n++;const k=st(o.x);PS[nm].c[k]=(PS[nm].c[k]||0)+1})});
+ const NA='ไม่ระบุ',PS={};L.forEach(o=>{const ow0=(o.i!=null?eoF(o.t,o.x):(o.x.owners||[])),ow=ow0.length?ow0:[NA];ow.forEach(nm=>{(PS[nm]=PS[nm]||{n:0,c:{}}).n++;const k=st(o.x);PS[nm].c[k]=(PS[nm].c[k]||0)+1})});
  const names=[...orderedPeople(),NA].filter(nm=>PS[nm]),mx=Math.max(1,...names.map(nm=>PS[nm].n)),ORD=['late','active','ok','none','done'];
  const leg=`<div class="dleg">${ORD.map(k=>`<span style="--sc:var(--s-${k})"><i></i>${ST[k]}</span>`).join('')}</div>`;
  const prow=nm=>{const P2=PS[nm],pcl=PCOLORS[nm]||'#9aa5a8';return`<div class="dpr"><div class="dpn" title="${esc(nm)}"><i style="background:${pcl}"></i>${esc(nm)}</div><div class="dbar" style="width:${P2.n/mx*100}%">${ORD.filter(k=>P2.c[k]).map(k=>`<span style="--sc:var(--s-${k});flex:${P2.c[k]}" title="${esc(nm)} · ${ST[k]} ${P2.c[k]} งาน"></span>`).join('')}</div><div class="dpc">${P2.n}</div></div>`};
@@ -1061,7 +1061,7 @@ addEventListener('pointerup',async()=>{
 
 function exportTasks(){const tOk=(a,b)=>!tf.size||(a||[]).some(x=>tf.has(x))||(b||[]).some(x=>tf.has(x)),qk=ti=>!sq||String(ti||'').toLowerCase().includes(sq),so=x=>!sf.size||sf.has(st(x)),res=[];
  sortT().forEach(t=>{if(t.hidden&&!showH)return;const S=t.subs||[];
-  if(S.length){const subs=S.filter(x=>(showH||!x.hidden)&&(!pf||(x.owners||[]).includes(pf))&&tOk(t.tags,x.tags)&&(qk(t.title)||qk(x.title))&&so(x));if(subs.length)res.push({...t,subs})}
+  if(S.length){const subs=S.filter(x=>(showH||!x.hidden)&&(!pf||eoF(t,x).includes(pf))&&tOk(t.tags,x.tags)&&(qk(t.title)||qk(x.title))&&so(x));if(subs.length)res.push({...t,subs})}
   else if((!pf||(t.owners||[]).includes(pf))&&tOk(t.tags)&&qk(t.title)&&so(t))res.push(t)});return res}
 function fltNote(){const a=[pf&&'คน: '+pf,tf.size&&'แท็ก: '+[...tf].join(', '),sf.size&&'สถานะ: '+[...sf].map(k=>ST[k]).join(', '),sq&&'ค้นหา: '+sq].filter(Boolean);return a.length?' · ตัวกรอง — '+a.join(' / '):''}
 function buildPrintable(){
@@ -1096,7 +1096,7 @@ function buildPrintablePerson(){
   const items=[];
   exportTasks().forEach(t=>{
    const S=t.subs||[],own=(t.owners||[]).includes(name);
-   if(S.length){const mine=S.filter(s=>(s.owners||[]).includes(name));if(mine.length)items.push([t,mine])}
+   if(S.length){const mine=S.filter(s=>eoF(t,s).includes(name));if(mine.length)items.push([t,mine])}
    else if(own)items.push([t,null])});
   if(!items.length)return;
   let html=`<div class="ptask"><h2 style="background:#333;color:#fff">${esc(name)}</h2>`;
@@ -1143,7 +1143,7 @@ function buildCSVTask(){
  const rows=[['งานหลัก','งานย่อย','ผู้รับผิดชอบ','แท็ก','วันเริ่ม','วันสิ้นสุด','สถานะ','เชื่อมโยงงาน','โน้ต']];
  exportTasks().forEach(t=>{
   const S=t.subs||[];
-  if(S.length)S.forEach(s=>rows.push([t.title,s.title,(s.owners||[]).join('; '),((s.tags&&s.tags.length?s.tags:t.tags)||[]).join('; '),s.start||'',s.end||'',ST[st(s)]||'',fsTxt(t.id,s),s.notes||'']));
+  if(S.length)S.forEach(s=>rows.push([t.title,s.title,eoF(t,s).join('; '),((s.tags&&s.tags.length?s.tags:t.tags)||[]).join('; '),s.start||'',s.end||'',ST[st(s)]||'',fsTxt(t.id,s),s.notes||'']));
   else rows.push([t.title,'',(t.owners||[]).join('; '),(t.tags||[]).join('; '),t.start||'',t.end||'',ST[st(t)]||'',fsTxt(t.id,t),t.notes||''])});
  return'﻿'+rows.map(r=>r.map(csvEsc).join(',')).join('\r\n')}
 function buildCSVPerson(){
@@ -1151,7 +1151,7 @@ function buildCSVPerson(){
  const P=pf?[pf]:orderedPeople();
  P.forEach(name=>{exportTasks().forEach(t=>{
   const S=t.subs||[],own=(t.owners||[]).includes(name);
-  if(S.length)S.filter(s=>(s.owners||[]).includes(name)).forEach(s=>rows.push([name,t.title,s.title,((s.tags&&s.tags.length?s.tags:t.tags)||[]).join('; '),s.start||'',s.end||'',ST[st(s)]||'',fsTxt(t.id,s),s.notes||'']));
+  if(S.length)S.filter(s=>eoF(t,s).includes(name)).forEach(s=>rows.push([name,t.title,s.title,((s.tags&&s.tags.length?s.tags:t.tags)||[]).join('; '),s.start||'',s.end||'',ST[st(s)]||'',fsTxt(t.id,s),s.notes||'']));
   else if(own)rows.push([name,t.title,'',(t.tags||[]).join('; '),t.start||'',t.end||'',ST[st(t)]||'',fsTxt(t.id,t),t.notes||''])})});
  return'﻿'+rows.map(r=>r.map(csvEsc).join(',')).join('\r\n')}
 async function exportCSV(mode){
