@@ -137,5 +137,5 @@
   })();
 
   const user = { id: async () => uid, can: () => true, profiles: async ids => Object.fromEntries((ids || []).map(i => [i, { name: (store['users/' + i] || {}).name || 'สมาชิก' }])) };
-  window.claude = { use: async n => { if (n === 'db') { await ready; return db; } if (n === 'user') { await ready; return user; } throw err('unavailable', n + ' ไม่รองรับนอก Claude'); } };
+  window.claude = { use: async n => { if (n === 'db') { await ready; return db; } if (n === 'user') { await ready; return user; } if (n === 'downloads') return window.__downloads; throw err('unavailable', n + ' ไม่รองรับนอก Claude'); } };
 })();

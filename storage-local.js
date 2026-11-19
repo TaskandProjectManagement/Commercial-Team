@@ -1,6 +1,18 @@
 /* storage.js — แทนที่ฐานข้อมูลของ Claude (window.claude) ด้วยการเก็บใน localStorage ของเบราว์เซอร์
    จำลอง API แบบ Firestore ที่แอปใช้: doc/collection, get/set/update/delete, orderBy/limit, onSnapshot */
 (function () {
+  /* ดาวน์โหลดไฟล์ (PDF/CSV/ไฟล์สำรอง) — แทนฟีเจอร์ downloads ของ Claude */
+  if (!window.__downloads) window.__downloads = {
+    save: async ({ filename, data, mime }) => {
+      const type = mime || (/\.csv$/i.test(filename) ? 'text/csv;charset=utf-8' : /\.json$/i.test(filename) ? 'application/json' : /\.pdf$/i.test(filename) ? 'application/pdf' : 'text/plain;charset=utf-8');
+      const blob = (typeof Blob !== 'undefined' && data instanceof Blob) ? data : new Blob([data], { type });
+      const url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      return { ok: true };
+    }
+  };
+
   const KEY = 'teamboard_db_v1', UID = 'teamboard_uid';
   let store = {};
   try { store = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { store = {}; }
@@ -55,5 +67,5 @@
   const user = { id: async () => uid, can: () => true, profiles: async ids => Object.fromEntries((ids || []).map(i => [i, { name: 'ผู้ใช้เครื่องนี้' }])) };
 
   window.addEventListener('storage', e => { if (e.key === KEY) { try { store = JSON.parse(e.newValue || '{}') || {}; } catch (x) {} subs.forEach(s => s.sched()); } });
-  window.claude = { use: async n => { if (n === 'db') return db; if (n === 'user') return user; throw err('unavailable', n + ' ไม่รองรับนอก Claude'); } };
+  window.claude = { use: async n => { if (n === 'db') return db; if (n === 'user') return user; if (n === 'downloads') return window.__downloads; throw err('unavailable', n + ' ไม่รองรับนอก Claude'); } };
 })();
