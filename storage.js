@@ -4,6 +4,7 @@
   const cfg = window.SHEETS_CONFIG;
   if (!cfg || !/^https:\/\/script\.google\.com\//.test(cfg.url || '')) { console.info('Commercial Team: โหมดเครื่องเดียว (ยังไม่ได้ตั้งค่า Google Sheets)'); return; }
   window.__SHARED = true;
+  if (cfg.title) { try { document.title = cfg.title; } catch (e) {} }
 
   const LS = 'tb_sheets_v1', POLL = 12000;
   const rnd = () => Math.random().toString(36).slice(2, 12);
@@ -12,8 +13,9 @@
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   let st = {}; try { st = JSON.parse(localStorage.getItem(LS) || '{}') || {}; } catch (e) {}
   let store = st.store || {}, ver = st.v || 0, pass = st.pass || '', name = st.name || '', uid = st.uid || ('u-' + rnd());
+  let gid = st.gid || '', gname = st.gname || '';   // กลุ่มงานของข้อมูลที่แคชไว้
   let started = false, loginMsg = '';
-  const save = () => { try { localStorage.setItem(LS, JSON.stringify({ pass, name, uid, v: ver, store })); } catch (e) {} };
+  const save = () => { try { localStorage.setItem(LS, JSON.stringify({ pass, name, uid, v: ver, store, gid, gname })); } catch (e) {} };
   const subs = new Set(), notify = () => subs.forEach(s => s.sched());
 
   /* ---------- เรียกเซิร์ฟเวอร์ ---------- */
@@ -33,7 +35,9 @@
     if (!force && (syncing || pending || !pass)) return;
     syncing = true;
     try {
-      const j = await post({ act: 'sync', since: full ? 0 : ver });
+      let j = await post({ act: 'sync', since: full ? 0 : ver });
+      if (j.gid && gid && j.gid !== gid) { store = {}; ver = 0; full = true; j = await post({ act: 'sync', since: 0 }); }   // เปลี่ยนกลุ่มงาน: ทิ้งข้อมูลแคชของกลุ่มเก่า
+      if (j.gid) { gid = j.gid; gname = j.gn || ''; }
       if (full) store = {};
       (j.changes || []).forEach(c => { if (c.d === null) delete store[c.p]; else store[c.p] = c.d; });
       ver = j.v; save(); notify();
@@ -96,7 +100,7 @@
         const ov = document.createElement('div');
         ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#101719;color:#e6eeee;display:flex;align-items:center;justify-content:center;font:15px "IBM Plex Sans Thai","Noto Sans Thai",sans-serif;padding:20px';
         const inp = 'display:block;width:100%;margin:0 0 10px;padding:10px 12px;border-radius:10px;border:1px solid #3a4a4d;background:#182124;color:#e6eeee;font:inherit;box-sizing:border-box';
-        ov.innerHTML = '<div style="width:300px;text-align:center"><h2 style="margin:0 0 6px">Commercial Team 2026–2027</h2><p style="color:#8ea3a6;margin:0 0 16px">ใส่ชื่อของคุณและรหัสผ่านทีม</p>' +
+        ov.innerHTML = '<div style="width:300px;text-align:center"><h2 style="margin:0 0 6px">' + esc(cfg.title || 'TPM Work') + '</h2><p style="color:#8ea3a6;margin:0 0 16px">' + esc(cfg.subtitle || 'ใส่ชื่อของคุณและรหัสผ่านทีม') + '</p>' +
           (loginMsg ? '<p style="color:#ff7b86;margin:0 0 12px">' + esc(loginMsg) + '</p>' : '') +
           '<input id="lgN" placeholder="ชื่อของคุณ" value="' + esc(name) + '" style="' + inp + '"><input id="lgP" type="password" placeholder="รหัสผ่านทีม" style="' + inp + '">' +
           '<button id="lgB" style="padding:10px 26px;border-radius:99px;border:0;background:#4fc1bb;color:#06201f;font:inherit;font-weight:600;cursor:pointer">เข้าใช้งาน</button></div>';
@@ -110,7 +114,7 @@
   }
   function badge() {
     const go = () => {
-      const b = document.createElement('button'); b.textContent = name + ' · ออก'; b.title = 'ออกจากระบบ';
+      const b = document.createElement('button'); b.textContent = name + (gname ? ' · ' + gname : '') + ' · ออก'; b.title = 'ออกจากระบบ';
       b.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9000;font-size:11px;padding:2px 10px;border-radius:99px;border:1px solid #8888;background:#0008;color:#fff;cursor:pointer;opacity:.7';
       b.onclick = () => { try { localStorage.removeItem(LS); } catch (e) {} location.reload(); };
       document.body.appendChild(b);
